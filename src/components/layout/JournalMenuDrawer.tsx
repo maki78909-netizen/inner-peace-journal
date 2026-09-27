@@ -17,6 +17,7 @@ export const JournalMenuDrawer: React.FC<JournalMenuDrawerProps> = ({
 }) => {
   const {
     state,
+    userRegistration,
     setScreen,
     completedDaysCount,
     overallProgress,
@@ -55,9 +56,16 @@ export const JournalMenuDrawer: React.FC<JournalMenuDrawerProps> = ({
         {/* Progress Card */}
         <div className="p-4 bg-gradient-to-br from-[#064A32] to-[#075B3A] text-white mx-4 mt-4 rounded-2xl shadow-sm border border-[#D9A441]/40">
           <div className="flex justify-between items-baseline mb-2">
-            <span className="font-serif text-xs tracking-wider uppercase text-[#D9A441] font-bold">
-              21-Day Journey Progress
-            </span>
+            <div>
+              <span className="font-serif text-xs tracking-wider uppercase text-[#D9A441] font-bold block">
+                21-Day Journey Progress
+              </span>
+              {userRegistration && (
+                <span className="text-[11px] text-white/90 font-sans block truncate max-w-[200px]">
+                  Welcome, {userRegistration.name}
+                </span>
+              )}
+            </div>
             <span className="font-sans font-bold text-lg text-[#ecd07a] tabular-nums">
               {overallProgress}%
             </span>

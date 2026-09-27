@@ -57,7 +57,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenIndex }) => {
       <div className="pt-2 sm:pt-4 px-3 sm:px-8 text-center relative z-10 flex flex-col items-center">
         {/* Official Circular Seal Emblem */}
         <div className="flex justify-center scale-90 xs:scale-100 transition-transform">
-          <Logo variant="seal" size="md" showTagline={true} />
+          <Logo variant="seal" size="md" showTagline={false} />
         </div>
 
         {/* 21-DAY (Large Antique Gold Serif) */}
@@ -273,40 +273,37 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenIndex }) => {
         {/* Footer Top Content Row: Responsive Grid for Mobile, Tablet & Desktop */}
         <div className="relative z-10 border-b border-[#D9A441]/30 pb-3 sm:pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 items-center justify-between gap-3 text-center sm:text-left">
-            {/* Left Column: Circular P2IP Emblem */}
+            {/* Left Column: Official Hero Logo with NO border */}
             <div className="flex items-center justify-center sm:justify-start gap-2.5">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#D9A441] bg-[#053d29] flex flex-col items-center justify-center p-1 text-center shadow-xs shrink-0">
-                <svg width="14" height="10" viewBox="0 0 16 12" fill="none">
-                  <path d="M8 12C6 8 1 7 0 2C3 1 7 4 8 8C9 4 13 1 16 2C15 7 10 8 8 12Z" fill="#D9A441" />
-                </svg>
-                <span className="font-sans font-bold text-xs text-white tracking-widest leading-none mt-0.5">
-                  P2IP
-                </span>
-                <span className="text-[6px] sm:text-[6.5px] text-[#EED894] uppercase tracking-tighter leading-tight mt-0.5">
-                  PEOPLE<br />PRACTICES<br />POSSIBILITIES
-                </span>
-              </div>
+              <img
+                src="/logo.webp"
+                alt="Path to Inner Peace Logo"
+                className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                }}
+              />
 
               <div className="text-left hidden md:block leading-tight">
                 <span className="text-[9px] uppercase tracking-[0.2em] text-[#D9A441] font-semibold block">
-                  Holistic Inner Transformation
+                  Path to Inner Peace
                 </span>
                 <span className="font-serif text-xs text-white">
-                  Path to Inner Peace Journal
+                  Holistic Inner Transformation
                 </span>
               </div>
             </div>
 
-            {/* Center Column: A JOURNEY BACK TO YOU & MAINAK CHATTERJEE */}
+            {/* Center Column: Inspirational Journal Dedication */}
             <div className="text-center leading-tight">
               <span className="text-[9.5px] sm:text-[11px] font-sans font-semibold tracking-[0.22em] text-[#EED894] uppercase block">
                 A JOURNEY BACK TO YOU
               </span>
               <span className="font-serif font-bold text-base sm:text-xl text-white tracking-[0.08em] uppercase block mt-0.5">
-                MAINAK CHATTERJEE
+                EMBRACE INNER HARMONY
               </span>
               <span className="text-[8.5px] sm:text-[10px] font-sans tracking-[0.18em] text-white/85 uppercase block mt-0.5">
-                FOUNDER | PATH TO INNER PEACE
+                DAILY PRACTICE • TIMELESS PEACE
               </span>
             </div>
 

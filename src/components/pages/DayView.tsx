@@ -17,9 +17,10 @@ interface DayViewProps {
 }
 
 export const DayView: React.FC<DayViewProps> = ({ dayNum, onOpenIndex }) => {
-  const { state, updateDayData, completeDay, nextScreen } = useJournal();
+  const { state, updateDayData, completeDay, nextScreen, isDayValid } = useJournal();
   const day = state.days[dayNum] || {};
   const isCompleted = (state.completedDays || []).includes(dayNum);
+  const validation = isDayValid(dayNum);
 
   const screenMeta = JOURNAL_24_SCREENS.find((s) => s.day === dayNum) || JOURNAL_24_SCREENS[dayNum - 1];
 
@@ -28,7 +29,10 @@ export const DayView: React.FC<DayViewProps> = ({ dayNum, onOpenIndex }) => {
   };
 
   const handleComplete = () => {
-    completeDay(dayNum);
+    const success = completeDay(dayNum);
+    if (success) {
+      nextScreen();
+    }
   };
 
   return (
@@ -60,7 +64,7 @@ export const DayView: React.FC<DayViewProps> = ({ dayNum, onOpenIndex }) => {
                   DAY {dayNum} COMPLETE 🌿
                 </span>
                 <span className="text-xs text-[#3a684f] font-sans">
-                  You showed up for yourself today.
+                  You showed up for yourself today. All exercises are saved.
                 </span>
               </div>
             </div>
@@ -79,6 +83,21 @@ export const DayView: React.FC<DayViewProps> = ({ dayNum, onOpenIndex }) => {
         {/* Dynamic Day Worksheet Sections */}
         {renderWorksheetSections(dayNum, day, update)}
 
+        {/* Validation Status Notification */}
+        {!isCompleted && !validation.isComplete && (
+          <div className="p-3 rounded-xl bg-[#fff8eb] border border-[#e8c676] text-xs text-[#735315] font-sans flex items-start gap-2">
+            <ShieldAlert className="w-4 h-4 text-[#D9A441] shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold block text-[#064A32]">
+                Please complete all exercises on Day {dayNum} ({validation.missingCount} remaining):
+              </span>
+              <span className="text-[11px] text-[#7a5912]">
+                {validation.missingFields.join(' • ')}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Bottom Action: Complete Day Button */}
         <div className="pt-2 no-print">
           <button
@@ -87,12 +106,18 @@ export const DayView: React.FC<DayViewProps> = ({ dayNum, onOpenIndex }) => {
             className={`w-full py-3.5 px-6 rounded-2xl font-serif font-bold text-base tracking-wider uppercase transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2 select-none ${
               isCompleted
                 ? 'bg-[#075B3A] text-[#F8F5EA] border border-[#D9A441]'
-                : 'bg-gradient-to-r from-[#064A32] to-[#075B3A] text-[#F8F5EA] hover:from-[#053d29] hover:to-[#064A32] ring-2 ring-[#D9A441]/50'
+                : !validation.isComplete
+                ? 'bg-[#064A32]/90 text-[#F8F5EA] hover:bg-[#064A32] ring-2 ring-[#D9A441]/50'
+                : 'bg-gradient-to-r from-[#064A32] to-[#075B3A] text-[#F8F5EA] hover:from-[#053d29] hover:to-[#064A32] ring-2 ring-[#D9A441]'
             }`}
           >
             <CheckCircle2 className="w-5 h-5 text-[#D9A441]" />
             <span>
-              {isCompleted ? `✓ Day ${dayNum} Marked Complete` : `[ ✓ COMPLETE DAY ${dayNum} ]`}
+              {isCompleted
+                ? `✓ Day ${dayNum} Marked Complete`
+                : !validation.isComplete
+                ? `[ Complete All Fields to Unlock Day ${dayNum + 1} ]`
+                : `[ ✓ COMPLETE DAY ${dayNum} ]`}
             </span>
           </button>
         </div>

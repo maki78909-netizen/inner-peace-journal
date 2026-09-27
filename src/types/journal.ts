@@ -74,12 +74,20 @@ export interface DeclarationData {
   committed: boolean;
 }
 
+export interface UserRegistration {
+  name: string;
+  whatsappNumber: string;
+  email: string;
+  registeredAt: string;
+}
+
 export interface JournalState {
   currentScreen: number; // 0 (Cover) to 24
   completedDays: number[];
   days: Record<number, DayData>;
   scorecard: ScorecardData;
   declaration: DeclarationData;
+  userRegistration?: UserRegistration | null;
   personalIntention?: {
     name: string;
     date: string;

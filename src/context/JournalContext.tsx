@@ -5,33 +5,59 @@ import {
   DayData,
   ScorecardData,
   DeclarationData,
+  UserRegistration,
 } from '../types/journal';
-import { createInitialJournalState, JOURNAL_24_SCREENS, ScreenMeta } from '../utils/defaultData';
+import {
+  createInitialJournalState,
+  createDefaultDayData,
+  JOURNAL_24_SCREENS,
+  ScreenMeta,
+} from '../utils/defaultData';
+import { validateDayCompletion, DayValidationResult } from '../utils/dayValidator';
 
 const STORAGE_KEY = 'path_to_inner_peace_master_v2';
+const REGISTRATION_KEY = 'path_to_inner_peace_registration_v1';
 
 interface JournalContextType {
   state: JournalState;
+  userRegistration: UserRegistration | null;
   saveStatus: 'saved' | 'saving';
   currentScreenMeta: ScreenMeta;
   totalScreens: number;
   completedDaysCount: number;
   overallProgress: number;
+  validationError: { screen: number; missingFields: string[] } | null;
+  clearValidationError: () => void;
   setScreen: (screenNumber: number) => void;
-  nextScreen: () => void;
+  nextScreen: () => boolean; // returns false if blocked by validation
   prevScreen: () => void;
   updateDayData: (dayNum: number, partialData: Partial<DayData>) => void;
   updateScorecard: (partial: Partial<ScorecardData>) => void;
   updateDeclaration: (partial: Partial<DeclarationData>) => void;
-  completeDay: (dayNum: number) => void;
+  completeDay: (dayNum: number) => boolean; // returns false if blocked by validation
+  resetDayFields: (dayNum: number) => void;
   resetJournal: () => void;
+  registerUser: (data: UserRegistration) => Promise<boolean>;
   exportJournalJson: () => void;
   triggerConfetti: () => void;
+  isDayValid: (dayNum: number) => DayValidationResult;
 }
 
 const JournalContext = createContext<JournalContextType | undefined>(undefined);
 
 export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [userRegistration, setUserRegistration] = useState<UserRegistration | null>(() => {
+    try {
+      const reg = localStorage.getItem(REGISTRATION_KEY);
+      if (reg) {
+        return JSON.parse(reg);
+      }
+    } catch (e) {
+      console.error('Failed to parse registration from storage', e);
+    }
+    return null;
+  });
+
   const [state, setState] = useState<JournalState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -62,6 +88,11 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     return createInitialJournalState();
   });
+
+  const [validationError, setValidationError] = useState<{
+    screen: number;
+    missingFields: string[];
+  } | null>(null);
 
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,6 +132,11 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     Math.round(((completedDaysCount + declarationDone) / 22) * 100)
   );
 
+  const isDayValid = (dayNum: number): DayValidationResult => {
+    const dayData = state.days[dayNum];
+    return validateDayCompletion(dayNum, dayData);
+  };
+
   const triggerConfetti = () => {
     try {
       confetti({
@@ -114,8 +150,13 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const clearValidationError = () => {
+    setValidationError(null);
+  };
+
   const setScreen = (screenNumber: number) => {
     const clamped = Math.max(0, Math.min(24, screenNumber));
+    setValidationError(null);
     setState((prev) => ({
       ...prev,
       currentScreen: clamped,
@@ -124,19 +165,40 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const nextScreen = () => {
+  const nextScreen = (): boolean => {
+    // If on a Day screen (1 to 21), validate that all fields are filled before allowing advance!
+    const screen = state.currentScreen;
+    if (screen >= 1 && screen <= 21) {
+      const validation = isDayValid(screen);
+      if (!validation.isComplete) {
+        setValidationError({
+          screen,
+          missingFields: validation.missingFields,
+        });
+        return false;
+      }
+    }
+
     if (state.currentScreen < 24) {
       setScreen(state.currentScreen + 1);
+      return true;
     }
+    return true;
   };
 
   const prevScreen = () => {
+    setValidationError(null);
     if (state.currentScreen > 0) {
       setScreen(state.currentScreen - 1);
     }
   };
 
   const updateDayData = (dayNum: number, partialData: Partial<DayData>) => {
+    // When user types in fields, clear error if matching current screen
+    if (validationError && validationError.screen === dayNum) {
+      setValidationError(null);
+    }
+
     setState((prev) => ({
       ...prev,
       days: {
@@ -172,7 +234,17 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
-  const completeDay = (dayNum: number) => {
+  const completeDay = (dayNum: number): boolean => {
+    // Validate first!
+    const validation = isDayValid(dayNum);
+    if (!validation.isComplete) {
+      setValidationError({
+        screen: dayNum,
+        missingFields: validation.missingFields,
+      });
+      return false;
+    }
+
     setState((prev) => {
       const alreadyDone = (prev.completedDays || []).includes(dayNum);
       const nextCompleted = alreadyDone
@@ -189,7 +261,7 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         },
       };
 
-      // Also set Journaling / Self-Reflection in scorecard for this day to 2 (completed)
+      // Also mark Journaling practice in scorecard
       const updatedGrid = { ...(prev.scorecard.practiceGrid || {}) };
       if (updatedGrid['Journaling / Self-Reflection']) {
         const row = [...updatedGrid['Journaling / Self-Reflection']];
@@ -214,17 +286,81 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         lastUpdated: new Date().toISOString(),
       };
     });
+
+    return true;
+  };
+
+  // Reset a single day's fields so user can rewrite them afresh
+  const resetDayFields = (dayNum: number) => {
+    setState((prev) => {
+      const updatedDays = {
+        ...prev.days,
+        [dayNum]: createDefaultDayData(dayNum),
+      };
+      const updatedCompleted = (prev.completedDays || []).filter((d) => d !== dayNum);
+
+      return {
+        ...prev,
+        days: updatedDays,
+        completedDays: updatedCompleted,
+        lastUpdated: new Date().toISOString(),
+      };
+    });
+    setValidationError(null);
   };
 
   const resetJournal = () => {
     const fresh = createInitialJournalState();
     localStorage.removeItem(STORAGE_KEY);
     setState(fresh);
+    setValidationError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const registerUser = async (data: UserRegistration): Promise<boolean> => {
+    try {
+      localStorage.setItem(REGISTRATION_KEY, JSON.stringify(data));
+      setUserRegistration(data);
+
+      // Attempt to submit registration to FormSubmit for mchatterjee69@gmail.com
+      try {
+        const response = await fetch('https://formsubmit.co/ajax/mchatterjee69@gmail.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            whatsapp: data.whatsappNumber,
+            email: data.email,
+            _subject: `New Journal Registration: ${data.name}`,
+            _template: 'table',
+            source: '21-Day Inner Healing Journal',
+            registeredAt: data.registeredAt,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('Registration submitted to FormSubmit successfully');
+        } else {
+          console.warn('FormSubmit responded with status', response.status);
+        }
+      } catch (submitErr) {
+        // FormSubmit network/CORS fallback - data is safely saved in local storage
+        console.warn('FormSubmit network submission caught fallback:', submitErr);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Registration storage error', err);
+      return false;
+    }
+  };
+
   const exportJournalJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
+    const dataStr =
+      'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute(
@@ -240,11 +376,14 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <JournalContext.Provider
       value={{
         state,
+        userRegistration,
         saveStatus,
         currentScreenMeta,
         totalScreens,
         completedDaysCount,
         overallProgress,
+        validationError,
+        clearValidationError,
         setScreen,
         nextScreen,
         prevScreen,
@@ -252,9 +391,12 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateScorecard,
         updateDeclaration,
         completeDay,
+        resetDayFields,
         resetJournal,
+        registerUser,
         exportJournalJson,
         triggerConfetti,
+        isDayValid,
       }}
     >
       {children}

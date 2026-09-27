@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { JournalProvider, useJournal } from './context/JournalContext';
+import { RegistrationPage } from './components/pages/RegistrationPage';
 import { CoverPage } from './components/pages/CoverPage';
 import { DayView } from './components/pages/DayView';
 import { ScorecardPage } from './components/pages/ScorecardPage';
@@ -14,9 +15,14 @@ import { JournalMenuDrawer } from './components/layout/JournalMenuDrawer';
 import { ResetModal } from './components/modals/ResetModal';
 
 const JournalMain: React.FC = () => {
-  const { state, resetJournal } = useJournal();
+  const { state, userRegistration, resetJournal } = useJournal();
   const [isIndexOpen, setIsIndexOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+
+  // If not yet registered, display mandatory Registration Page before Cover Page
+  if (!userRegistration) {
+    return <RegistrationPage />;
+  }
 
   const screen = state.currentScreen;
 
@@ -47,7 +53,7 @@ const JournalMain: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3efe6] text-[#1c2e26] flex flex-col items-center justify-start px-1.5 py-1 sm:p-4 selection:bg-[#D9A441]/30 selection:text-[#075B3A] overflow-x-hidden w-full">
+    <div className="min-h-screen bg-[#f3efe6] text-[#1c2e26] flex flex-col items-center justify-start px-1.5 py-1 sm:p-4 selection:bg-[#D9A441]/30 selection:text-[#064A32] overflow-x-hidden w-full">
       {/* Central A4 Portrait Journal Canvas */}
       <main className="w-full max-w-4xl flex justify-center">
         {renderCurrentScreen()}

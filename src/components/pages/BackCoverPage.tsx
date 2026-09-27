@@ -22,7 +22,7 @@ export const BackCoverPage: React.FC<BackCoverPageProps> = ({ onOpenIndex }) => 
     <article className="journal-sheet max-w-[840px] w-full min-h-[1100px] bg-white rounded-3xl mx-auto flex flex-col justify-between overflow-hidden relative shadow-xl border border-[#ebd89b]/60 my-2 sm:my-6 text-center">
       {/* Top Emerald & Gold Arc Accent */}
       <div className="relative pt-8 sm:pt-12 px-6 flex flex-col items-center">
-        <Logo size="lg" showTagline={true} />
+        <Logo size="lg" variant="seal" showTagline={false} />
 
         <div className="mt-4 space-y-1">
           <span className="font-serif font-black tracking-[0.25em] text-[#D9A441] text-xs uppercase block">
