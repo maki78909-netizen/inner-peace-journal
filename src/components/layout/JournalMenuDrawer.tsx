@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useJournal } from '../../context/JournalContext';
 import { JOURNAL_24_SCREENS } from '../../utils/defaultData';
-import { X, Check, RotateCcw, Download, Sparkles, BookOpen } from 'lucide-react';
+import { X, Check, RotateCcw, Download, Sparkles, BookOpen, Lock } from 'lucide-react';
 import { Logo } from '../brand/Logo';
 
 interface JournalMenuDrawerProps {
@@ -19,10 +19,13 @@ export const JournalMenuDrawer: React.FC<JournalMenuDrawerProps> = ({
     state,
     userRegistration,
     setScreen,
+    isScreenUnlocked,
     completedDaysCount,
     overallProgress,
     exportJournalJson,
   } = useJournal();
+
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -86,29 +89,59 @@ export const JournalMenuDrawer: React.FC<JournalMenuDrawerProps> = ({
 
         {/* Scrollable List of Exactly 24 Screens */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#8e6e18] block px-2 mb-1">
-            24 Journal Screens Index
-          </span>
+          <div className="flex items-center justify-between px-2 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8e6e18] block">
+              24 Journal Screens Index
+            </span>
+            <span className="text-[10px] text-[#748e80] italic">
+              (Days unlock sequentially)
+            </span>
+          </div>
+
+          {/* Locked Notice Alert Banner */}
+          {lockedNotice && (
+            <div className="p-3 bg-[#fff8eb] border-2 border-[#D9A441] rounded-xl flex items-center gap-2.5 text-xs text-[#735315] animate-in fade-in slide-in-from-top duration-200 shadow-xs">
+              <Lock className="w-4 h-4 text-[#D9A441] shrink-0" />
+              <span className="font-semibold">{lockedNotice}</span>
+            </div>
+          )}
 
           <div className="space-y-1">
             {JOURNAL_24_SCREENS.map((item) => {
               const isCurrent = state.currentScreen === item.screen;
               const isDay = item.type === 'day' && item.day;
               const isCompleted = isDay ? (state.completedDays || []).includes(item.day!) : false;
+              const isUnlocked = isScreenUnlocked(item.screen);
 
               return (
                 <button
                   key={item.screen}
-                  onClick={() => navigateTo(item.screen)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all cursor-pointer min-h-[46px] select-none ${
-                    isCurrent
-                      ? 'bg-[#075B3A] text-white shadow-xs font-semibold'
-                      : 'hover:bg-[#f1f6f2] text-[#1c382b]'
+                  onClick={() => {
+                    if (!isUnlocked) {
+                      const requiredDay = item.day ? item.day - 1 : 21;
+                      setLockedNotice(
+                        `Day ${item.day || item.screen} is locked. You must complete Day ${requiredDay} first.`
+                      );
+                      setTimeout(() => setLockedNotice(null), 3500);
+                      return;
+                    }
+                    navigateTo(item.screen);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all min-h-[46px] select-none ${
+                    !isUnlocked
+                      ? 'opacity-65 bg-[#f8f6f0] text-[#6b7d72] cursor-not-allowed hover:bg-[#f3f0e6]'
+                      : isCurrent
+                      ? 'bg-[#075B3A] text-white shadow-xs font-semibold cursor-pointer'
+                      : 'hover:bg-[#f1f6f2] text-[#1c382b] cursor-pointer'
                   }`}
                 >
                   {/* Status Indicator Icon */}
                   <div className="shrink-0 flex items-center justify-center w-6 h-6">
-                    {isDay ? (
+                    {!isUnlocked ? (
+                      <div className="w-5 h-5 rounded-full bg-[#ebe7db] text-[#8e6e18] flex items-center justify-center border border-[#d6dfd8]">
+                        <Lock className="w-3 h-3 text-[#8e6e18]" />
+                      </div>
+                    ) : isDay ? (
                       isCompleted ? (
                         <div className="w-5 h-5 rounded-full bg-[#0e3b2e] text-[#D9A441] flex items-center justify-center text-xs font-bold border border-[#D9A441]">
                           ✓
@@ -133,14 +166,28 @@ export const JournalMenuDrawer: React.FC<JournalMenuDrawerProps> = ({
 
                   {/* Title & Theme */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-1">
-                      <span className="text-xs font-serif font-bold uppercase tracking-wide truncate">
+                    <div className="flex items-center justify-between gap-1">
+                      <span
+                        className={`text-xs font-serif font-bold uppercase tracking-wide truncate ${
+                          !isUnlocked ? 'text-[#6b7d72]' : ''
+                        }`}
+                      >
                         {item.title} — {item.themeTitle}
                       </span>
+                      {!isUnlocked && (
+                        <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#8e6e18] bg-[#fdf6e6] border border-[#ebd89b] px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>Locked</span>
+                        </span>
+                      )}
                     </div>
                     <span
                       className={`text-[11px] truncate block ${
-                        isCurrent ? 'text-[#ecd07a]' : 'text-[#627a6d]'
+                        isCurrent
+                          ? 'text-[#ecd07a]'
+                          : !isUnlocked
+                          ? 'text-[#8b9d93]'
+                          : 'text-[#627a6d]'
                       }`}
                     >
                       {item.subtitle}

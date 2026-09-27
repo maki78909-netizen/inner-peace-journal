@@ -11,7 +11,7 @@ export interface DayValidationResult {
 
 const isNonEmpty = (val: any): boolean => {
   if (typeof val === 'string') {
-    return val.trim().length > 1;
+    return val.trim().length > 0;
   }
   return Boolean(val);
 };
@@ -27,18 +27,26 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
 
   const missing: string[] = [];
 
+  // 1. Mood Check-In Check (applies to all days with an emotional check-in)
+  const hasMood =
+    (Array.isArray(dayData.moods) && dayData.moods.length > 0) ||
+    isNonEmpty(dayData.mood) ||
+    isNonEmpty(dayData.moodOther);
+  if (!hasMood) {
+    missing.push("Today's Emotional Check-In (select at least one mood)");
+  }
+
+  // 2. Day-Specific Required Fields
   switch (dayNum) {
     case 1:
-      if (!isNonEmpty(dayData.mood)) missing.push('Mood Check-In');
-      if (!isNonEmpty(dayData.feelingToday)) missing.push("How you're feeling right now");
-      if (!isNonEmpty(dayData.occupyingMind)) missing.push("What has been occupying your mind");
-      if (!isNonEmpty(dayData.unsettledPart)) missing.push("What feels heavy or unsettled");
-      if (!isNonEmpty(dayData.wishUnderstood)) missing.push("What you wish someone understood");
-      if (!isNonEmpty(dayData.honestAdmit)) missing.push("One thing you can honestly admit");
+      if (!isNonEmpty(dayData.feelingToday)) missing.push("1. How you're feeling today");
+      if (!isNonEmpty(dayData.occupyingMind)) missing.push('2. What is occupying your mind');
+      if (!isNonEmpty(dayData.unsettledPart)) missing.push('3. What feels unsettled right now');
+      if (!isNonEmpty(dayData.wishUnderstood)) missing.push('4. What you wish someone understood');
+      if (!isNonEmpty(dayData.honestAdmit)) missing.push('5. What you honestly admit');
       break;
 
     case 2:
-      // At least 1-2 trigger rows filled
       if (Array.isArray(dayData.triggerRows)) {
         const filledRows = dayData.triggerRows.filter(
           (r: any) =>
@@ -48,12 +56,14 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
             isNonEmpty(r.thought)
         );
         if (filledRows.length === 0) {
-          missing.push('At least one emotional trigger observation');
+          missing.push('At least one emotional trigger scenario');
         }
       } else {
-        missing.push('Trigger reflection log');
+        missing.push('Trigger reflection scenario');
       }
-      if (!isNonEmpty(dayData.reflection)) missing.push('Trigger reflection summary');
+      if (!isNonEmpty(dayData.patternNoticed) && !isNonEmpty(dayData.reflection)) {
+        missing.push('Reflection on trigger patterns');
+      }
       break;
 
     case 3:
@@ -62,89 +72,81 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
           (b: any) => isNonEmpty(b.recurringThought) || isNonEmpty(b.balancedPerspective)
         );
         if (filledBeliefs.length === 0) {
-          missing.push('At least one recurring belief examination');
+          missing.push('At least one recurring belief & balanced perspective');
         }
       } else {
         missing.push('Belief log');
       }
+      if (!isNonEmpty(dayData.whoWouldIBecome) && !isNonEmpty(dayData.energySpentDefending)) {
+        missing.push('Reflection on letting go of limiting stories');
+      }
       break;
 
     case 4:
-      if (!isNonEmpty(dayData.mistakeSelfTalk)) missing.push('Self-talk when making a mistake');
-      if (!isNonEmpty(dayData.learnedSelfTalk)) missing.push('Where you learned that internal voice');
-      if (!isNonEmpty(dayData.speakToLovedOne)) missing.push('Would you speak this way to a loved one?');
-      if (!isNonEmpty(dayData.compassionateResponse)) missing.push('Rewritten compassionate response');
+      if (!isNonEmpty(dayData.mistakeSelfTalk)) missing.push('1. Self-talk when making a mistake');
+      if (!isNonEmpty(dayData.learnedSelfTalk)) missing.push('2. Where you learned that voice');
+      if (!isNonEmpty(dayData.speakToLovedOne)) missing.push('3. Would you speak this way to someone you love');
+      if (!isNonEmpty(dayData.compassionateResponse)) missing.push('4. Compassionate, honest response');
       break;
 
     case 5:
-      if (!isNonEmpty(dayData.suppressedEmotion)) missing.push('Emotion you tend to push away');
-      if (!isNonEmpty(dayData.whyAvoid)) missing.push('Why you avoid feeling it');
-      if (!isNonEmpty(dayData.fearOfExpressing)) missing.push('What you fear would happen');
-      if (!isNonEmpty(dayData.physicalLocation)) missing.push('Where you feel it in your body');
-      if (!isNonEmpty(dayData.emotionNeeds)) missing.push('What this emotion is asking for');
+      if (!isNonEmpty(dayData.suppressedEmotion)) missing.push('1. Emotion you avoid expressing');
+      if (!isNonEmpty(dayData.whyAvoid)) missing.push('2. Why you avoid it');
+      if (!isNonEmpty(dayData.fearOfExpressing)) missing.push('3. Fear of expressing it');
+      if (!isNonEmpty(dayData.physicalLocation)) missing.push('4. Body awareness: where tension is felt');
+      if (!isNonEmpty(dayData.emotionNeeds)) missing.push('5. What this emotion is asking for');
       break;
 
     case 6:
-      if (!isNonEmpty(dayData.whatHappened)) missing.push('Painful event or memory');
-      if (!isNonEmpty(dayData.feltThen)) missing.push('What you felt then');
-      if (!isNonEmpty(dayData.neededThen)) missing.push('What you needed then');
-      if (!isNonEmpty(dayData.understandToday)) missing.push('What you understand today');
-      if (!isNonEmpty(dayData.giveMyselfNow)) missing.push('What you can give yourself now');
+      if (!isNonEmpty(dayData.whatHappened)) missing.push('1. Painful event or memory');
+      if (!isNonEmpty(dayData.feltThen)) missing.push('2. What you felt then');
+      if (!isNonEmpty(dayData.neededThen)) missing.push('3. What you needed then');
+      if (!isNonEmpty(dayData.understandToday)) missing.push('4. What you understand today');
+      if (!isNonEmpty(dayData.giveMyselfNow)) missing.push('5. What you can give yourself now');
       break;
 
     case 7:
-      if (dayData.ratings) {
-        const ratings = Object.values(dayData.ratings) as number[];
-        const hasZero = ratings.some((r) => !r || r === 0);
-        if (hasZero) missing.push('All 5 emotional rating scores');
-      } else {
-        missing.push('Weekly milestone ratings');
-      }
-      if (!isNonEmpty(dayData.discoveredThisWeek)) missing.push('What you discovered this week');
-      if (!isNonEmpty(dayData.patternNoticed)) missing.push('Emotional pattern noticed');
+      if (!isNonEmpty(dayData.discoveredThisWeek)) missing.push('1. What you discovered this week');
+      if (!isNonEmpty(dayData.patternNoticed)) missing.push('2. Emotional pattern noticed');
+      if (!isNonEmpty(dayData.perspectiveShift)) missing.push('3. Shift in perspective');
       break;
 
     case 8:
-      if (!isNonEmpty(dayData.letterToYoungerMe)) missing.push('Letter to your younger self');
-      if (!isNonEmpty(dayData.whatIUnderstandNow)) missing.push('What you understand now');
-      if (!isNonEmpty(dayData.whatWasntMyFault)) missing.push("What wasn't your fault");
-      if (!isNonEmpty(dayData.whatIAppreciate)) missing.push('What you appreciate about younger self');
+      if (!isNonEmpty(dayData.letterToYoungerMe)) missing.push('1. Letter to your younger self');
+      if (!isNonEmpty(dayData.whatIWishIHear)) missing.push('2. What younger you needed to hear');
+      if (!isNonEmpty(dayData.whatWasntMyFault)) missing.push("3. What wasn't your fault");
+      if (!isNonEmpty(dayData.whatIAppreciate)) missing.push('4. What you appreciate about younger self');
       break;
 
     case 9:
-      if (!isNonEmpty(dayData.blameMyselfFor)) missing.push('What you have blamed yourself for');
-      if (!isNonEmpty(dayData.knowNowNotThen)) missing.push('What you know now that you did not then');
-      if (!isNonEmpty(dayData.learnNotPunish)) missing.push('How to learn without punishing yourself');
-      if (!dayData.statementAgreed) missing.push('Acceptance of forgiveness statement');
+      if (!isNonEmpty(dayData.blameMyselfFor)) missing.push('1. What you have blamed yourself for');
+      if (!isNonEmpty(dayData.knowNowNotThen)) missing.push('2. What you know now that you did not then');
+      if (!isNonEmpty(dayData.learnNotPunish)) missing.push('3. How to learn without punishing yourself');
+      if (!dayData.statementAgreed) missing.push('Acceptance of self-forgiveness checkbox');
       break;
 
     case 10:
-      if (!isNonEmpty(dayData.repeatedlyTryingToControl)) missing.push('What you repeatedly try to control');
-      if (!isNonEmpty(dayData.consciouslyRelease)) missing.push('What you choose to consciously release');
+      if (!isNonEmpty(dayData.repeatedlyTryingToControl)) missing.push('1. What you repeatedly try to control');
+      if (!isNonEmpty(dayData.consciouslyRelease)) missing.push('2. What you choose to consciously release');
       break;
 
     case 11:
-      if (!isNonEmpty(dayData.tolerateDontWant)) missing.push('What you tolerate that you no longer want to');
-      if (!isNonEmpty(dayData.boundaryNeed)) missing.push('The healthy boundary you need');
-      if (!isNonEmpty(dayData.afraidIfSet)) missing.push('What you fear will happen if set');
-      if (!isNonEmpty(dayData.respectingSelfLooksLike)) missing.push('What respecting yourself looks like');
-      if (!isNonEmpty(dayData.todayBoundary)) missing.push("Today's concrete boundary action");
+      if (!isNonEmpty(dayData.tolerateDontWant)) missing.push('1. What you tolerate that drains your peace');
+      if (!isNonEmpty(dayData.boundaryNeed)) missing.push('2. The healthy boundary you need');
+      if (!isNonEmpty(dayData.afraidIfSet)) missing.push('3. What you fear will happen if set');
+      if (!isNonEmpty(dayData.todayBoundary)) missing.push("4. Today's concrete boundary action");
       break;
 
     case 12:
       if (!isNonEmpty(dayData.seekApproval)) missing.push('Approval-seeking assessment');
       if (!isNonEmpty(dayData.avoidDifficultConversations)) missing.push('Difficult conversations assessment');
       if (!isNonEmpty(dayData.overGive)) missing.push('Over-giving assessment');
-      if (!isNonEmpty(dayData.suppressNeeds)) missing.push('Suppressing needs assessment');
       if (!isNonEmpty(dayData.patternToChange)) missing.push('Relationship pattern you want to shift');
       break;
 
     case 13:
-      if (Array.isArray(dayData.gratitudeItems)) {
-        const filled = dayData.gratitudeItems.filter((g: string) => isNonEmpty(g));
-        if (filled.length < 2) missing.push('At least two gratitude items');
-      } else {
-        missing.push('Gratitude entries');
+      if (!isNonEmpty(dayData.gratitudeItem1) && (!dayData.gratitudeItems || !dayData.gratitudeItems[0])) {
+        missing.push('At least one gratitude reflection');
       }
       if (!isNonEmpty(dayData.whyMatter)) missing.push('Why these blessings matter to you');
       if (!isNonEmpty(dayData.todayGratitudeAction)) missing.push("Today's gratitude action");
@@ -158,7 +160,7 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
         missing.push('Self-appreciation entries');
       }
       if (!isNonEmpty(dayData.imperfectionsToAccept)) missing.push('Imperfections you choose to accept');
-      if (!isNonEmpty(dayData.kinderPerspective)) missing.push('Kinder perspective on your flaws');
+      if (!isNonEmpty(dayData.practiceSelfCompassion)) missing.push('How you practice self-compassion');
       break;
 
     case 15:
@@ -168,7 +170,9 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
       } else {
         missing.push('Habit transformation worksheet');
       }
-      if (!isNonEmpty(dayData.todaySmallAction)) missing.push("Today's micro-habit action");
+      if (!isNonEmpty(dayData.highestLeverageHabit) && !isNonEmpty(dayData.whyPastFailed)) {
+        missing.push('Reflection on habit leverage');
+      }
       break;
 
     case 16:
@@ -183,10 +187,9 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
     case 17:
       if (Array.isArray(dayData.relationships)) {
         const filledRel = dayData.relationships.filter((r: string) => isNonEmpty(r));
-        if (filledRel.length < 2) missing.push('Key relationships to nurture');
+        if (filledRel.length < 2) missing.push('At least two relationships to nurture');
       }
       if (!isNonEmpty(dayData.makesRelationshipHealthy)) missing.push('What creates a healthy bond');
-      if (!isNonEmpty(dayData.relationshipToStrengthen)) missing.push('Relationship you want to strengthen');
       if (!isNonEmpty(dayData.actionPlan)) missing.push('Specific nurturing action plan');
       break;
 
@@ -203,19 +206,18 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
       break;
 
     case 19:
-      if (Array.isArray(dayData.gratitudeItems)) {
-        const filled = dayData.gratitudeItems.filter((g: string) => isNonEmpty(g));
-        if (filled.length < 2) missing.push('Gratitude reflections');
+      if (!isNonEmpty(dayData.sensoryGratitude) && (!dayData.gratitudeItems || !dayData.gratitudeItems[0])) {
+        missing.push('Sensory gratitude reflection');
       }
-      if (Array.isArray(dayData.joyItems)) {
-        const filled = dayData.joyItems.filter((j: string) => isNonEmpty(j));
-        if (filled.length < 2) missing.push('Simple moments of joy');
+      if (!isNonEmpty(dayData.simpleJoy) && (!dayData.joyItems || !dayData.joyItems[0])) {
+        missing.push('Simple moment of joy');
       }
-      if (!isNonEmpty(dayData.todayAction)) missing.push("Today's mindful action");
+      if (!isNonEmpty(dayData.mindfulSensoryNoticed) && !isNonEmpty(dayData.scheduledJoyActivity)) {
+        missing.push('Mindful living practice reflection');
+      }
       break;
 
     case 20:
-      if (!isNonEmpty(dayData.mood)) missing.push('Emotional check-in mood');
       if (Array.isArray(dayData.kinderAreas)) {
         const filledKinder = dayData.kinderAreas.filter((k: string) => isNonEmpty(k));
         if (filledKinder.length < 2) missing.push('At least two areas to be kinder to yourself');
@@ -223,8 +225,6 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
       if (!isNonEmpty(dayData.compassionPractice)) missing.push('Your self-compassion practice');
       if (!isNonEmpty(dayData.negativeThought)) missing.push('Harsh internal thought');
       if (!isNonEmpty(dayData.kinderThought)) missing.push('Kinder, balanced thought');
-      if (!isNonEmpty(dayData.smallAction)) missing.push("Today's small action of self-kindness");
-      if (!isNonEmpty(dayData.discoveredToday)) missing.push('What you discovered today');
       break;
 
     case 21:
@@ -239,7 +239,6 @@ export const validateDayCompletion = (dayNum: number, dayData: any): DayValidati
       break;
 
     default:
-      // Generic check if needed
       break;
   }
 

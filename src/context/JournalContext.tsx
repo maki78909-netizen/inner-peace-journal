@@ -41,6 +41,8 @@ interface JournalContextType {
   exportJournalJson: () => void;
   triggerConfetti: () => void;
   isDayValid: (dayNum: number) => DayValidationResult;
+  isDayUnlocked: (dayNum: number) => boolean;
+  isScreenUnlocked: (screenNumber: number) => boolean;
 }
 
 const JournalContext = createContext<JournalContextType | undefined>(undefined);
@@ -64,24 +66,30 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (saved) {
         const parsed = JSON.parse(saved);
         const initial = createInitialJournalState();
-        return {
-          ...initial,
-          ...parsed,
-          scorecard: {
-            ...initial.scorecard,
-            ...(parsed.scorecard || {}),
-            practiceGrid: { ...initial.scorecard.practiceGrid, ...(parsed.scorecard?.practiceGrid || {}) },
-            ratings: { ...initial.scorecard.ratings, ...(parsed.scorecard?.ratings || {}) },
-          },
-          declaration: {
-            ...initial.declaration,
-            ...(parsed.declaration || {}),
-            personalCommitments: parsed.declaration?.personalCommitments || initial.declaration.personalCommitments,
-          },
-          days: { ...initial.days, ...(parsed.days || {}) },
-          completedDays: Array.isArray(parsed.completedDays) ? parsed.completedDays : [],
-          currentScreen: typeof parsed.currentScreen === 'number' ? Math.max(0, Math.min(24, parsed.currentScreen)) : 0,
-        };
+          const completedDays = Array.isArray(parsed.completedDays) ? parsed.completedDays : [];
+          let currentScreen = typeof parsed.currentScreen === 'number' ? Math.max(0, Math.min(24, parsed.currentScreen)) : 0;
+          if (currentScreen >= 2 && currentScreen <= 21 && !completedDays.includes(currentScreen - 1)) {
+            const firstIncomplete = Array.from({ length: 21 }, (_, i) => i + 1).find((d) => !completedDays.includes(d)) || 1;
+            currentScreen = firstIncomplete;
+          }
+          return {
+            ...initial,
+            ...parsed,
+            scorecard: {
+              ...initial.scorecard,
+              ...(parsed.scorecard || {}),
+              practiceGrid: { ...initial.scorecard.practiceGrid, ...(parsed.scorecard?.practiceGrid || {}) },
+              ratings: { ...initial.scorecard.ratings, ...(parsed.scorecard?.ratings || {}) },
+            },
+            declaration: {
+              ...initial.declaration,
+              ...(parsed.declaration || {}),
+              personalCommitments: parsed.declaration?.personalCommitments || initial.declaration.personalCommitments,
+            },
+            days: { ...initial.days, ...(parsed.days || {}) },
+            completedDays,
+            currentScreen,
+          };
       }
     } catch (e) {
       console.error('Failed to parse saved journal data', e);
@@ -154,8 +162,34 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setValidationError(null);
   };
 
+  const isDayUnlocked = (dayNum: number): boolean => {
+    if (dayNum <= 1) return true;
+    // Day d requires Day d - 1 to be completed!
+    return (state.completedDays || []).includes(dayNum - 1);
+  };
+
+  const isScreenUnlocked = (screenNumber: number): boolean => {
+    if (screenNumber <= 1) return true; // Cover (0) and Day 1 are always unlocked
+    if (screenNumber >= 2 && screenNumber <= 21) {
+      return isDayUnlocked(screenNumber);
+    }
+    if (screenNumber === 22 || screenNumber === 23) {
+      // Scorecard (22) & Declaration (23) require Day 21 completion
+      return (state.completedDays || []).includes(21);
+    }
+    return true; // Screen 24 (Back Cover)
+  };
+
   const setScreen = (screenNumber: number) => {
     const clamped = Math.max(0, Math.min(24, screenNumber));
+    if (!isScreenUnlocked(clamped)) {
+      const requiredDay = clamped <= 21 ? clamped - 1 : 21;
+      setValidationError({
+        screen: state.currentScreen,
+        missingFields: [`Day ${clamped} is locked. Please complete Day ${requiredDay} first.`],
+      });
+      return;
+    }
     setValidationError(null);
     setState((prev) => ({
       ...prev,
@@ -397,6 +431,8 @@ export const JournalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         exportJournalJson,
         triggerConfetti,
         isDayValid,
+        isDayUnlocked,
+        isScreenUnlocked,
       }}
     >
       {children}

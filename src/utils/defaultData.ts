@@ -58,13 +58,23 @@ export const createDefaultDayData = (dayNum: number) => {
   const base = {
     completed: false,
     practiceDone: false,
+    moods: [] as string[],
+    mood: '', // backwards compatibility
+    moodOther: '',
+    ratings: {
+      overallMood: 0,
+      energyLevel: 0,
+      mentalClarity: 0,
+      selfCompassion: 0,
+    },
+    smallActionDone: false,
+    discoveredToday: '',
   };
 
   switch (dayNum) {
     case 1:
       return {
         ...base,
-        mood: '',
         feelingToday: '',
         occupyingMind: '',
         unsettledPart: '',
@@ -79,6 +89,8 @@ export const createDefaultDayData = (dayNum: number) => {
           { trigger: '', whatHappened: '', emotion: '', thought: '', reaction: '' },
           { trigger: '', whatHappened: '', emotion: '', thought: '', reaction: '' },
         ],
+        patternNoticed: '',
+        unmetNeed: '',
         reflection: '',
       };
     case 3:
@@ -91,6 +103,8 @@ export const createDefaultDayData = (dayNum: number) => {
           { recurringThought: '', classification: '', balancedPerspective: '' },
           { recurringThought: '', classification: '', balancedPerspective: '' },
         ],
+        energySpentDefending: '',
+        whoWouldIBecome: '',
       };
     case 4:
       return {
@@ -99,6 +113,8 @@ export const createDefaultDayData = (dayNum: number) => {
         learnedSelfTalk: '',
         speakToLovedOne: '' as '' | 'Yes' | 'No' | 'Sometimes',
         compassionateResponse: '',
+        harshThought: '',
+        lovingTruth: '',
       };
     case 5:
       return {
@@ -130,15 +146,17 @@ export const createDefaultDayData = (dayNum: number) => {
         },
         discoveredThisWeek: '',
         patternNoticed: '',
+        vulnerabilityShown: '',
+        perspectiveShift: '',
       };
     case 8:
       return {
         ...base,
         letterToYoungerMe: '',
-        whatIUnderstandNow: '',
+        whatIWishIHear: '',
         whatWasntMyFault: '',
         whatIAppreciate: '',
-        whatIWishIHear: '',
+        protectAndNurture: '',
       };
     case 9:
       return {
@@ -146,6 +164,8 @@ export const createDefaultDayData = (dayNum: number) => {
         blameMyselfFor: '',
         knowNowNotThen: '',
         learnNotPunish: '',
+        lifeWithoutSelfBlame: '',
+        forgiveMyselfFor: '',
         statementAgreed: false,
       };
     case 10:
@@ -159,12 +179,15 @@ export const createDefaultDayData = (dayNum: number) => {
           boundaries: false,
           choices: false,
         },
+        canControlCustom: '',
         cannotControl: {
           opinions: false,
           choices: false,
           past: false,
           outcomes: false,
+          events: false,
         },
+        cannotControlCustom: '',
         repeatedlyTryingToControl: '',
         consciouslyRelease: '',
       };
@@ -185,22 +208,31 @@ export const createDefaultDayData = (dayNum: number) => {
         overGive: '' as '' | 'Often' | 'Sometimes' | 'Rarely',
         suppressNeeds: '' as '' | 'Often' | 'Sometimes' | 'Rarely',
         defensiveWhenHurt: '' as '' | 'Often' | 'Sometimes' | 'Rarely',
+        copingOrigin: '',
         patternToChange: '',
       };
     case 13:
       return {
         ...base,
-        gratitudeItems: ['', '', ''],
+        gratitudeItem1: '',
+        gratitudeItem2: '',
+        gratitudeItem3: '',
         whyMatter: '',
-        noticeAbundance: '',
+        truthForScarcity: '',
         todayGratitudeAction: '',
       };
     case 14:
       return {
         ...base,
+        ratings: {
+          selfAcceptance: 0,
+          compassionForImperfections: 0,
+          innerPeaceLevel: 0,
+          vitality: 0,
+        },
         appreciateAboutSelf: ['', '', '', '', ''],
         imperfectionsToAccept: '',
-        kinderPerspective: '',
+        withoutPerfection: '',
         practiceSelfCompassion: '',
       };
     case 15:
@@ -213,7 +245,8 @@ export const createDefaultDayData = (dayNum: number) => {
           { habit: '', whyItMatters: '', obstacle: '', solution: '' },
           { habit: '', whyItMatters: '', obstacle: '', solution: '' },
         ],
-        todaySmallAction: '',
+        whyPastFailed: '',
+        highestLeverageHabit: '',
       };
     case 16:
       return {
@@ -232,49 +265,46 @@ export const createDefaultDayData = (dayNum: number) => {
     case 17:
       return {
         ...base,
-        relationships: ['', '', '', '', ''],
+        relationships: ['', '', '', ''],
         makesRelationshipHealthy: '',
         relationshipToStrengthen: '',
         communicateBetter: '',
         actionPlan: '',
-        todaySmallAction: '',
       };
     case 18:
       return {
         ...base,
-        stressTriggers: ['', '', '', '', ''],
-        healthyCoping: ['', '', '', '', ''],
+        stressTriggers: ['', '', '', ''],
+        healthyCoping: ['', '', '', ''],
         thinkExercise: '',
         pauseExercise: '',
         chooseExercise: '',
+        stressEvolution: '',
         resilienceAction: '',
       };
     case 19:
       return {
         ...base,
-        gratitudeItems: ['', '', ''],
-        joyItems: ['', '', ''],
-        mindfulPracticeChoice: '',
-        noticedDuringMindful: '',
-        todayAction: '',
+        sensoryGratitude: '',
+        simpleJoy: '',
+        quietMoment: '',
+        mindfulSensoryNoticed: '',
+        scheduledJoyActivity: '',
       };
     case 20:
       return {
         ...base,
-        mood: '',
-        kinderAreas: ['', '', '', '', ''],
+        kinderAreas: ['', '', '', ''],
         compassionPractice: '',
         negativeThought: '',
         kinderThought: '',
-        smallAction: '',
-        smallActionDone: false,
-        discoveredToday: '',
       };
     case 21:
       return {
         ...base,
         positiveChanges: '',
         challengesOvercome: '',
+        mostGratefulFor: '',
         learnedAboutSelf: '',
         keyTakeaways: ['', '', '', '', ''],
         commitmentGoingForward: ['', '', ''],

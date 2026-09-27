@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface JournalSectionPanelProps {
-  number: number | string;
+  number?: number | string;
   title: string;
   instruction?: string;
   children: React.ReactNode;
@@ -27,25 +27,27 @@ export const JournalSectionPanel: React.FC<JournalSectionPanelProps> = ({
     <section className={`w-full p-4 sm:p-5 rounded-2xl bg-[#fdfcf9] border border-[#e4ded0] shadow-2xs space-y-3 relative overflow-hidden ${className}`}>
       {/* Top Header: Circular Number Badge + Section Title */}
       <div className="flex items-start gap-3">
-        <div
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-serif font-black text-sm sm:text-base border shadow-xs shrink-0 mt-0.5 ${badgeClasses}`}
-        >
-          {number}
-        </div>
+        {number !== undefined && (
+          <div
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center font-serif font-black text-xs sm:text-sm shrink-0 shadow-2xs ${badgeClasses}`}
+          >
+            {number}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-serif font-bold text-base sm:text-lg text-[#075B3A] uppercase tracking-wide leading-snug">
+          <h3 className="font-serif font-bold text-sm sm:text-base text-[#075B3A] tracking-wide leading-snug">
             {title}
           </h3>
           {instruction && (
-            <p className="font-sans text-xs text-[#526b5d] italic leading-normal mt-0.5">
+            <p className="text-xs text-[#526b5d] font-sans mt-0.5 leading-relaxed italic">
               {instruction}
             </p>
           )}
         </div>
       </div>
 
-      {/* Interactive Content Area */}
+      {/* Section Interactive Content */}
       <div className="pt-1">{children}</div>
     </section>
   );
