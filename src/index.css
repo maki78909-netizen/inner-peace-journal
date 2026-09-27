@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-emerald-primary: #075b3a;
+    --color-emerald-dark: #064a32;
+    --color-gold: #d9a441;
+    --color-cream: #f8f5ea;
+    --color-sage: #eaf2ea;
+    --color-blue-accent: #2a6b85;
+    --color-blue-soft: #ebf3f6;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f3efe6;
+    color: #1a2e26;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Cormorant Garamond', Georgia, Cambria, serif;
+  }
+
+  .font-script {
+    font-family: 'Caveat', cursive;
+  }
+}
+
+/* Authentic Ruled Journal Paper Line Background for Textareas */
+.journal-ruled-lines {
+  background-color: #ffffff;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    #e2ede4 31px,
+    #e2ede4 32px
+  );
+  line-height: 32px !important;
+  background-attachment: local;
+}
+
+.journal-ruled-cream {
+  background-color: #faf8f2;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    #e8dfca 31px,
+    #e8dfca 32px
+  );
+  line-height: 32px !important;
+  background-attachment: local;
+}
+
+/* Journal Page Paper Texture & Elevation */
+.journal-sheet {
+  background-color: #ffffff;
+  box-shadow: 0 10px 35px -5px rgba(6, 74, 50, 0.12), 0 0 0 1px rgba(217, 164, 65, 0.25);
+}
+
+/* Gold Gradient Shimmer */
+.gold-text-shimmer {
+  background: linear-gradient(135deg, #c7922a 0%, #ecd07a 50%, #b88320 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.emerald-banner {
+  background: linear-gradient(135deg, #064a32 0%, #075b3a 100%);
+}
+
+/* Subtle print rules */
+@media print {
+  body {
+    background: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .journal-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+}
